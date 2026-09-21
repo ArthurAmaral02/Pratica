@@ -13,19 +13,7 @@ Criar uma topologia de rede com diferentes condições de enlace, permitindo obs
 * Roteamento entre hosts.
 
 ## Topologia
-
-```text
-        h1
-        |
-       s1
-      /  \
-    h2    |
-     |
-     s2
-   / | \
- h3 h4 h5
-```
-
+![[Pasted image 20260921092546.png]]
 ### Endereçamento
 
 | Host    | IP          |
@@ -67,36 +55,10 @@ A transparência é observada pela abstração da infraestrutura de rede. Os hos
 
 O roteamento entre as redes também é configurado no `h2`, permitindo a comunicação entre diferentes segmentos da rede.
 
-## Execução
-
-Execute o script com privilégios de administrador:
-
-```bash
-sudo python3 topology.py
-```
-
-Dentro do CLI do Mininet, alguns testes podem ser realizados com:
-
-```bash
-h3 ping -c 10 h5
-```
-
-ou:
-
-```bash
-h1 ping -c 10 h3
-```
-
-Para sair:
-
-```bash
-exit
-```
-
 ## Tecnologias
 
 * Python
 * Mininet
 * Linux
-* `TCLink`
-* Open vSwitch
+* Miniedit
+* RPyC
