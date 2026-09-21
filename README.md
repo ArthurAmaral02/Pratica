@@ -1,511 +1,102 @@
-````md
-# RPyC + Mininet — Rede Distribuída Controlada
+# Mininet — Transparência e Desempenho
 
-Experimento utilizando Mininet, TCLink e RPyC para criar uma rede virtual com agentes distribuídos e condições controladas de latência, largura de banda e perda de pacotes.
+Projeto desenvolvido em **Mininet** para simular uma rede e analisar conceitos de **transparência** e **desempenho** em redes de computadores.
 
----
+## Objetivo
 
-## 1. Arquivos
+Criar uma topologia de rede com diferentes condições de enlace, permitindo observar:
 
-A estrutura básica do projeto é:
+* Latência;
+* Largura de banda;
+* Perda de pacotes;
+* Comunicação entre diferentes redes;
+* Roteamento entre hosts.
 
-```text
-projeto/
-├── topology.py
-├── agent.py
-├── controller.py
-├── README.md
-└── RELATORIO.md
-````
-
----
-
-## 2. Requisitos
-
-Ambiente utilizado:
+## Topologia
 
 ```text
-Ubuntu 14.04.3 LTS
-Python 3.4.3
-Mininet
-RPyC 3.3.0
-```
-
-Verifique o Python:
-
-```bash
-python3 --version
-```
-
-Verifique o RPyC:
-
-```bash
-python3 -c "import rpyc; print(rpyc.__version__)"
-```
-
-Resultado esperado:
-
-```text
-(3, 3, 0)
-```
-
----
-
-## 3. Instalar o RPyC
-
-Caso o RPyC ainda não esteja instalado:
-
-```bash
-sudo apt-get install python3-pip
-sudo pip3 install 'rpyc==3.3.0'
-```
-
-Teste:
-
-```bash
-python3 -c "import rpyc; print(rpyc.__version__)"
-```
-
----
-
-## 4. Topologia
-
-A topologia utiliza três hosts e um switch.
-
-```text
-              +-------+
-              |  s1   |
-              +-------+
-               / | \
-              /  |  \
-             /   |   \
-            h1   h2   h3
-
-        10.0.0.1  10.0.0.2  10.0.0.3
-```
-
-Configuração dos enlaces:
-
-```text
-h1 -- s1
-10 Mbps
-20 ms
-1% loss
-
-h2 -- s1
-5 Mbps
-50 ms
-3% loss
-
-h3 -- s1
-2 Mbps
-100 ms
-5% loss
-```
-
----
-
-## 5. Executar a topologia
-
-Execute:
-
-```bash
-sudo python topology.py
-```
-
-Quando o CLI do Mininet aparecer:
-
-```text
-mininet>
-```
-
-a rede estará disponível.
-
----
-
-## 6. Testar conectividade
-
-Execute:
-
-```text
-mininet> pingall
-```
-
-Para um teste mais longo, utilize:
-
-```text
-mininet> h1 ping -c 100 10.0.0.2
-```
-
-Ou:
-
-```text
-mininet> h1 ping -c 100 10.0.0.3
-```
-
----
-
-## 7. Verificar o RPyC nos hosts
-
-O comando correto é `python3`.
-
-Não utilizar:
-
-```text
-python agent.py
-```
-
-porque o comando `python` da VM utiliza Python 2.
-
-Utilize:
-
-```text
-python3 agent.py
-```
-
-Teste o RPyC:
-
-```text
-mininet> h1 python3 -c "import rpyc; print(rpyc.__version__)"
-mininet> h2 python3 -c "import rpyc; print(rpyc.__version__)"
-mininet> h3 python3 -c "import rpyc; print(rpyc.__version__)"
-```
-
-Resultado esperado:
-
-```text
-(3, 3, 0)
-```
-
----
-
-## 8. Iniciar os agentes
-
-Com o CLI do Mininet aberto:
-
-```text
-mininet> h1 python3 agent.py &
-mininet> h2 python3 agent.py &
-mininet> h3 python3 agent.py &
-```
-
-Os três agentes utilizam a porta:
-
-```text
-18861
-```
-
----
-
-## 9. Verificar os agentes
-
-Verifique os processos:
-
-```text
-mininet> h1 ps aux | grep agent.py
-```
-
-Também é possível verificar a porta:
-
-```text
-mininet> h1 netstat -lnt | grep 18861
-mininet> h2 netstat -lnt | grep 18861
-mininet> h3 netstat -lnt | grep 18861
-```
-
-Deve aparecer:
-
-```text
-0.0.0.0:18861
-```
-
-com estado:
-
-```text
-LISTEN
-```
-
----
-
-## 10. Testar o controller
-
-O controller deve ser executado dentro de um host Mininet porque os endereços:
-
-```text
-10.0.0.1
-10.0.0.2
-10.0.0.3
-```
-
-pertencem à rede virtual.
-
-Execute:
-
-```text
-mininet> h1 python3 controller.py
-```
-
-O resultado esperado é semelhante a:
-
-```text
-========================
-Host: h1
-IP: 10.0.0.1
-Status: OK
-Hostname: sdnhubvm
-
-========================
-Host: h2
-IP: 10.0.0.2
-Status: OK
-Hostname: sdnhubvm
-
-========================
-Host: h3
-IP: 10.0.0.3
-Status: OK
-Hostname: sdnhubvm
-```
-
----
-
-## 11. Testar h1 -> h2 através do RPyC
-
-O controller pode conectar ao agente do h1:
-
-```python
-conn = rpyc.connect("10.0.0.1", 18861)
-```
-
-e solicitar:
-
-```python
-resultado = conn.root.ping("10.0.0.2")
-```
-
-O fluxo será:
-
-```text
-Controller
+        h1
+        |
+       s1
+      /  \
+    h2    |
      |
-     | RPyC
-     v
-Agent h1
-     |
-     | ping
-     v
-    h2
+     s2
+   / | \
+ h3 h4 h5
 ```
 
-Execute:
+### Endereçamento
+
+| Host    | IP          |
+| ------- | ----------- |
+| h1      | 10.0.0.1/24 |
+| h2      | 10.0.0.2/24 |
+| h2-eth1 | 10.0.2.1/24 |
+| h3      | 10.0.2.3/24 |
+| h4      | 10.0.2.4/24 |
+| h5      | 10.0.2.5/24 |
+
+O `h2` atua como roteador entre as redes `10.0.0.0/24` e `10.0.2.0/24`.
+
+## Desempenho
+
+Os enlaces utilizam `TCLink` para simular diferentes condições de rede:
+
+* **Bandwidth (`bw`)** — limita a largura de banda;
+* **Delay (`delay`)** — adiciona latência;
+* **Loss (`loss`)** — simula perda de pacotes.
+
+Por exemplo, a comunicação entre `h3` e `h5` passa por:
 
 ```text
-mininet> h1 python3 controller.py
+h3 → s2 → h5
 ```
 
----
-
-## 12. Resultado esperado
-
-O resultado deverá conter informações semelhantes a:
+Com `100 ms` no enlace de `h3` e `140 ms` no enlace de `h5`, o RTT esperado é aproximadamente:
 
 ```text
-10 packets transmitted, 8 received, 20% packet loss
+(100 + 140) × 2 = 480 ms
 ```
 
-e:
+Além disso, os enlaces possuem **5% de perda de pacotes**.
 
-```text
-rtt min/avg/max/mdev =
-141.166/182.961/291.685/50.599 ms
-```
+## Transparência
 
-Os valores variam a cada execução.
+A transparência é observada pela abstração da infraestrutura de rede. Os hosts podem se comunicar utilizando seus endereços IP sem precisar conhecer diretamente os detalhes internos dos switches.
 
-Para o caminho:
+O roteamento entre as redes também é configurado no `h2`, permitindo a comunicação entre diferentes segmentos da rede.
 
-```text
-h1 -> s1 -> h2
-```
+## Execução
 
-a latência configurada é:
-
-```text
-20 ms + 50 ms = 70 ms
-```
-
-Como o ping mede ida e volta:
-
-```text
-70 ms * 2 = aproximadamente 140 ms
-```
-
----
-
-## 13. Teste h1 -> h3
-
-Para testar o h3, solicite ao agente do h1:
-
-```python
-conn.root.ping("10.0.0.3")
-```
-
-O caminho será:
-
-```text
-h1 -> s1 -> h3
-```
-
-com:
-
-```text
-20 ms + 100 ms = 120 ms
-```
-
-e RTT aproximado:
-
-```text
-120 ms * 2 = 240 ms
-```
-
----
-
-## 14. Testes entre todos os hosts
-
-Os caminhos que podem ser medidos são:
-
-```text
-h1 -> h2
-h1 -> h3
-
-h2 -> h1
-h2 -> h3
-
-h3 -> h1
-h3 -> h2
-```
-
-Para cada caminho podem ser coletados:
-
-```text
-RTT mínimo
-RTT médio
-RTT máximo
-desvio padrão
-perda de pacotes
-```
-
----
-
-## 15. Parar os agentes
-
-Quando terminar os testes:
-
-```text
-mininet> h1 pkill -f "python3 agent.py"
-mininet> h2 pkill -f "python3 agent.py"
-mininet> h3 pkill -f "python3 agent.py"
-```
-
----
-
-## 16. Encerrar o Mininet
-
-No CLI:
-
-```text
-mininet> exit
-```
-
-Depois, se necessário:
+Execute o script com privilégios de administrador:
 
 ```bash
-sudo mn -c
+sudo python3 topology.py
 ```
 
-O comando `mn -c` limpa interfaces e processos residuais do Mininet.
+Dentro do CLI do Mininet, alguns testes podem ser realizados com:
 
----
-
-## 17. Fluxo completo
-
-A execução completa pode ser resumida:
-
-```text
-1. Iniciar a VM
-       |
-       v
-2. Executar topology.py
-       |
-       v
-3. Entrar no CLI do Mininet
-       |
-       v
-4. Iniciar agent.py em h1, h2 e h3
-       |
-       v
-5. Verificar porta 18861
-       |
-       v
-6. Executar controller.py
-       |
-       v
-7. Controller conecta via RPyC
-       |
-       v
-8. Agent executa ping
-       |
-       v
-9. Mininet aplica delay/bw/loss
-       |
-       v
-10. Controller recebe as métricas
+```bash
+h3 ping -c 10 h5
 ```
 
----
+ou:
 
-## 18. Próxima evolução
-
-O próximo passo do projeto é automatizar o controller para realizar:
-
-```text
-              ┌──> h2
-              |
-h1 ───────────┼──> h3
-              |
-h2 ───────────┼──> h1
-              |
-              ├──> h3
-              |
-h3 ───────────┼──> h1
-              |
-              └──> h2
+```bash
+h1 ping -c 10 h3
 ```
 
-e gerar automaticamente uma tabela:
+Para sair:
 
-```text
-+--------+---------+-----------+---------+
-| Origem | Destino | RTT médio | Perda   |
-+--------+---------+-----------+---------+
-| h1     | h2      | ...       | ...     |
-| h1     | h3      | ...       | ...     |
-| h2     | h1      | ...       | ...     |
-| h2     | h3      | ...       | ...     |
-| h3     | h1      | ...       | ...     |
-| h3     | h2      | ...       | ...     |
-+--------+---------+-----------+---------+
+```bash
+exit
 ```
 
-Depois disso, o controller poderá ser expandido para alterar dinamicamente:
+## Tecnologias
 
-```text
-bandwidth
-latency
-packet loss
-```
-
-permitindo realizar experimentos automatizados de comportamento da rede.
-
-```
-```
+* Python
+* Mininet
+* Linux
+* `TCLink`
+* Open vSwitch
